@@ -1,0 +1,14 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 2,
+	"name": "bloom-ux/events",
+	"version": "0.1.0",
+	"title": "Eventos",
+	"category": "widgets",
+	"icon": "calendar-alt",
+	"description": "Muestra las próximas actividades",
+	"supports": {
+		"html": false
+	},
+	"textdomain": "bloom-ux-events"
+}

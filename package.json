@@ -1,0 +1,25 @@
+{
+  "name": "wp-plugin-boilerplate",
+  "version": "0.1.0",
+  "description": "A plugin for WordPress",
+  "license": "GPL-2.0-or-later",
+  "private": true,
+  "devDependencies": {
+    "@symfony/webpack-encore": "^1",
+    "@wordpress/babel-preset-default": "^6.8.0",
+    "@wordpress/dependency-extraction-webpack-plugin": "^3.4.1",
+    "@wordpress/scripts": "^22.4.0",
+    "postcss-loader": "^6.2.1",
+    "sass": "^1.49.0",
+    "sass-loader": "^12.4.0"
+  },
+  "scripts": {
+    "build": "wp-scripts build assets/src/js/editor-block.js --output-path=assets/dist/block",
+    "format": "wp-scripts format assets/src/js",
+    "lint:css": "wp-scripts lint-style assets/dist/block",
+    "lint:js": "wp-scripts lint-js assets/src/js",
+    "packages-update": "wp-scripts packages-update",
+    "plugin-zip": "wp-scripts plugin-zip",
+    "start": "wp-scripts start assets/src/js/editor-block.js --output-path=assets/dist/block"
+  }
+}

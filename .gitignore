@@ -1,4 +1,5 @@
 node_modules/
 vendor/
 wp-content/
+assets/dist/*
 *.log

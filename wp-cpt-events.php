@@ -33,14 +33,14 @@ add_action(
 
 add_action( 'init', array( 'Event_Post_Type', 'register_post_type' ) );
 
-add_action( 'init', 'event_cpt_register_tax', 50 );
+add_action( 'init', 'bloom_ux_wp_cpt_events_register_tax', 50 );
 
 /**
  * Registrar una taxonomía personalizada para clasificar eventos
  *
  * @return void
  */
-function event_cpt_register_tax() {
+function bloom_ux_wp_cpt_events_register_tax() {
 	register_taxonomy(
 		'events_tax',
 		array( 'event' ),
@@ -63,4 +63,48 @@ function event_cpt_register_tax() {
 			'rest_base'         => 'events-tax',
 		)
 	);
+}
+
+add_action( 'init', 'bloom_ux_wp_cpt_events_register_block' );
+
+/**
+ * Registrar el bloque para el editor
+ *
+ * @return void
+ */
+function bloom_ux_wp_cpt_events_register_block() {
+	wp_register_script(
+		'bloom_ux_wp_cpt_events_runtime',
+		bloom_ux_get_path_from_manifest( 'runtime.js' ),
+		array(),
+		null,
+		false
+	);
+	wp_register_script(
+		'bloom_ux_wp_cpt_events_block',
+		bloom_ux_get_path_from_manifest( 'editor-block.js' ),
+		array( 'bloom_ux_wp_cpt_events_runtime' ),
+		null,
+		false
+	);
+	register_block_type(
+		'bloom-ux/wp-cpt-events',
+		array(
+			'title' => 'Eventos',
+			'icon' => 'calendar-alt',
+			'category' => 'widgets',
+			'editor_script' => 'bloom_ux_wp_cpt_events_block'
+		)
+	);
+}
+
+function bloom_ux_get_path_from_manifest( string $key ) : string {
+	static $manifest;
+	if ( ! $manifest ) {
+		$manifest = json_decode( file_get_contents( __DIR__ . '/assets/dist/manifest.json' ) );
+	}
+	if ( ! isset( $manifest->{$key } ) ) {
+		return '';
+	}
+	return plugins_url( $manifest->{$key} );
 }
