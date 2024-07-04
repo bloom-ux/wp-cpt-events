@@ -13,9 +13,9 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "php": ">=7.2",
+        "php": ">=8.0",
         "composer/installers": "^2",
-        "felipelavinz/queulat": "dev-master",
+        "bloom-ux/queulat": "dev-main",
         "spatie/calendar-links": "^1.5"
     },
     "require-dev": {
@@ -31,10 +31,6 @@
         "lint": "parallel-lint ./ --blame --exclude vendor --exclude node_modules",
         "sniff": "phpcs --standard=WordPress *.php src/ --cache",
         "compat": "phpcs --standard=PHPCompatibility *.php src/*.php --ignore=vendor --runtime-set testVersion 7.2 --cache",
-        "post-create-project-cmd": [
-            "npm install",
-            "npx encore production"
-        ]
     },
     "config": {
         "allow-plugins": {
@@ -42,7 +38,7 @@
             "composer/installers": true
         },
         "platform": {
-            "php": "7.2.24"
+            "php": ">8.0"
         }
     }
 }
