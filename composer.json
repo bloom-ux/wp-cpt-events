@@ -30,7 +30,7 @@
         "fix": "phpcbf --standard=WordPress *.php src/",
         "lint": "parallel-lint ./ --blame --exclude vendor --exclude node_modules",
         "sniff": "phpcs --standard=WordPress *.php src/ --cache",
-        "compat": "phpcs --standard=PHPCompatibility *.php src/*.php --ignore=vendor --runtime-set testVersion 7.2 --cache",
+        "compat": "phpcs --standard=PHPCompatibility *.php src/*.php --ignore=vendor --runtime-set testVersion 8.0 --cache"
     },
     "config": {
         "allow-plugins": {
