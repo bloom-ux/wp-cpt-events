@@ -75,22 +75,6 @@ class Event_Post_Object extends Post_Object {
 	}
 
 	/**
-	 * Permitir llamar métodos de la clase como snakeCase
-	 *
-	 * @param array $name Nombre del método.
-	 * @param mixed $arguments Argumentos para el método.
-	 * @return mixed Lo que sea que devuelve el método compatible
-	 * @throws BadFunctionCallException En caso de que no exista método compatible.
-	 */
-	public function __call( $name, $arguments ) {
-		$method = Strings::toSnakeCase( $name );
-		if ( ! method_exists( $this, $method ) ) {
-			throw new BadFunctionCallException( "no existe el método ${name} ({$method})" );
-		}
-		return call_user_func_array( array( $this, $method ), $arguments );
-	}
-
-	/**
 	 * Obtener fecha de inicio en el formato especificado
 	 *
 	 * @param string $format Formato de fecha (ver doc de php.net).
