@@ -6,7 +6,6 @@
  */
 
 use Queulat\Post_Object;
-use Underscore\Types\Strings;
 use Spatie\CalendarLinks\Link;
 
 /**
@@ -22,7 +21,7 @@ class Event_Post_Object extends Post_Object {
 	 * @return array
 	 * @see https://schema.org/EventAttendanceModeEnumeration
 	 */
-	public static function get_attendance_modes() : array {
+	public static function get_attendance_modes(): array {
 		return array(
 			'OfflineEventAttendanceMode' => _x( 'Presencial', 'tipos de asistencia', 'cpt_event' ),
 			'OnlineEventAttendanceMode'  => _x( 'Online', 'tipos de asistencia', 'cpt_event' ),
@@ -36,7 +35,7 @@ class Event_Post_Object extends Post_Object {
 	 * @return array Opciones de calendarización
 	 * @see https://schema.org/EventStatusType
 	 */
-	public static function get_stati() : array {
+	public static function get_stati(): array {
 		return array(
 			'EventScheduled'   => _x( 'Sin modificaciones de calendarización', 'status del evento', 'cpt_event' ),
 			'EventMovedOnline' => _x( 'Cambia de presencial a online', 'status del evento', 'cpt_event' ),
@@ -80,7 +79,7 @@ class Event_Post_Object extends Post_Object {
 	 * @param string $format Formato de fecha (ver doc de php.net).
 	 * @return string Fecha formateada y traducida
 	 */
-	public function get_formatted_date( string $format = '' ) : string {
+	public function get_formatted_date( string $format = '' ): string {
 		return mysql2date( $format, $this->post->dtstart, true );
 	}
 
@@ -89,8 +88,8 @@ class Event_Post_Object extends Post_Object {
 	 *
 	 * @return string Fecha inicio en formato Y-m-d
 	 */
-	public function get_dt_start() : string {
-		$fdate = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtstart );
+	public function get_dt_start(): string {
+		$fdate = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtstart, $this->get_timezone() );
 		return $fdate ? $fdate->format( 'Y-m-d' ) : '';
 	}
 
@@ -99,8 +98,8 @@ class Event_Post_Object extends Post_Object {
 	 *
 	 * @return null|DateTimeImmutable Fecha de inicio o nulo si no es válida
 	 */
-	public function get_start_datetime() : ?DateTimeImmutable {
-		$dtstart = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtstart, wp_timezone() );
+	public function get_start_datetime(): ?DateTimeImmutable {
+		$dtstart = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtstart, $this->get_timezone() );
 		return isset( $dtstart ) ? $dtstart : null;
 	}
 
@@ -109,8 +108,8 @@ class Event_Post_Object extends Post_Object {
 	 *
 	 * @return null|DateTimeImmutable Fecha de término o nulo si no es válida
 	 */
-	public function get_end_datetime() : ?DateTimeImmutable {
-		$dtend = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtend, wp_timezone() );
+	public function get_end_datetime(): ?DateTimeImmutable {
+		$dtend = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtend, $this->get_timezone() );
 		return isset( $dtend ) ? $dtend : null;
 	}
 
@@ -119,8 +118,8 @@ class Event_Post_Object extends Post_Object {
 	 *
 	 * @return string Nombre del mes de inicio del evento
 	 */
-	public function get_dt_start_month_name() : string {
-		$fdate = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtstart );
+	public function get_dt_start_month_name(): string {
+		$fdate = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtstart, $this->get_timezone() );
 		if ( ! $fdate ) {
 			return '';
 		}
@@ -132,7 +131,7 @@ class Event_Post_Object extends Post_Object {
 	 *
 	 * @return string Fecha de inicio y término, si corresponde
 	 */
-	public function get_date_range() : string {
+	public function get_date_range(): string {
 		/* translators: Formato fecha en vista individual */
 		$format  = __( 'j \d\e F Y', 'cpt_event' );
 		$dtstart = mysql2date( $format, $this->post->dtstart );
@@ -145,26 +144,55 @@ class Event_Post_Object extends Post_Object {
 	}
 
 	/**
+	 * Obtener la zona horaria del evento.
+	 *
+	 * Si no se ha definido, se usará la zona horaria del sitio.
+	 *
+	 * @return string Identificador de zona horaria, p.ej: "America/Santiago"
+	 */
+	public function get_timezone_string(): string {
+		$tz_string = $this->get_single( 'event_timezone' );
+		if ( empty( $tz_string ) ) {
+			$tz_string = wp_timezone_string();
+		}
+		return $tz_string;
+	}
+
+	/**
+	 * Obtener la zona horaria del evento como objeto DateTimeZone
+	 *
+	 * @return DateTimeZone Zona horaria del evento
+	 */
+	public function get_timezone(): DateTimeZone {
+		static $tz;
+		if ( ! $tz ) {
+			$tz = new DateTimeZone( $this->get_timezone_string() );
+		}
+		return $tz;
+	}
+
+	/**
 	 * Obtener el rango de duración del evento, como string
 	 *
 	 * @return string Hora de inicio y/o término
 	 */
-	public function get_time_range() : string {
+	public function get_time_range(): string {
 		if ( (bool) $this->post->event_full_day ) {
 			/* translators: %s hora de inicio */
-			return sprintf( __( 'Desde las %shrs.', 'cpt_event' ), $this->get_formatted_date( 'H:i' ) );
+			return sprintf( __( 'Desde las %1$shrs. (%2$s)', 'cpt_event' ), $this->get_formatted_date( 'H:i' ), $this->get_formatted_date( 'e' ) );
 		}
-
-		$time_start = mysql2date( 'H:i', $this->post->dtstart, true );
-		$time_end   = mysql2date( 'H:i', $this->post->dtend, true );
-
-		if ( $time_start === $time_end ) {
+		$dt_start = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtstart, $this->get_timezone() );
+		$dt_end   = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtend, $this->get_timezone() );
+		if ( ! $dt_start ) {
+			return '';
+		}
+		if ( $dt_start->format( 'H:i' ) === $dt_end->format( 'H:i' ) ) {
 			/* translators: %s hora de inicio */
-			return sprintf( __( '%shrs.', 'cpt_event' ), $time_start );
+			return sprintf( __( '%1$shrs. (%2$s)', 'cpt_event' ), $dt_start->format( 'H:i' ), $dt_start->format( 'e' ) );
 		}
 
 		/* translators: %1: hora de inicio; %2: hora de término */
-		return sprintf( __( '%1$s - %2$shrs.', 'cpt_event' ), $time_start, $time_end );
+		return sprintf( __( '%1$s - %2$shrs. (%3$s)', 'cpt_event' ), $dt_start->format( 'H:i' ), $dt_end->format( 'H:i' ), $dt_start->format( 'e' ) );
 	}
 
 	/**
@@ -172,7 +200,7 @@ class Event_Post_Object extends Post_Object {
 	 *
 	 * @return string URL para agregar a Google Calendar
 	 */
-	public function get_calendar_link() : string {
+	public function get_calendar_link(): string {
 		static $link;
 		if ( $link instanceof Link ) {
 			return $link->google();

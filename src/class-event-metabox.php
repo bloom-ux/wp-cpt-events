@@ -71,11 +71,58 @@ class Event_Metabox extends Metabox {
 	}
 
 	/**
+	 * Obtener popularidad de zonas horarias
+	 *
+	 * @return array Hash con identificadores de zonas horarias como key y conteo de eventos como valor
+	 */
+	private function get_timezones_counts(): array {
+		$cached = wp_cache_get( 'timezones_counts', 'wp_cpt_events' );
+		if ( ! empty( $cached ) ) {
+			return $cached;
+		}
+		global $wpdb;
+		$timezones_counts = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT COUNT(meta_id) as q, meta_value as timezone_string FROM {$wpdb->postmeta} WHERE meta_key = 'event_timezone' GROUP BY meta_value ORDER BY q desc",
+			)
+		);
+		$counts = wp_list_pluck( $timezones_counts, 'q', 'timezone_string' );
+		$counts = array_map( 'intval', $counts );
+		wp_cache_set( 'timezones_counts', $counts, 'wp_cpt_events', HOUR_IN_SECONDS );
+		return $counts;
+	}
+
+	/**
+	 * Obtener opciones de zonas horarias
+	 *
+	 * La lista se ordena por popularidad de uso y luego alfabéticamente
+	 *
+	 * @return array Identificadores de zona horaria
+	 */
+	private function get_timezones_options(): array {
+		$timezone_identifiers = timezone_identifiers_list( DateTimeZone::ALL_WITH_BC );
+		$timezone_counts      = $this->get_timezones_counts();
+		usort(
+			$timezone_identifiers,
+			function ( $a, $b ) use ( $timezone_counts ) {
+				$a_count = (int) $timezone_counts[ $a ] ?? 0;
+				$b_count = (int) $timezone_counts[ $b ] ?? 0;
+				return $a_count === $b_count ? strcasecmp( $a, $b ) : $b_count - $a_count;
+			}
+		);
+		return $timezone_identifiers;
+	}
+
+	/**
 	 * Obtener campos del meta box
 	 *
 	 * @return Queulat\Forms\Node_Interface[] Campos para el meta box
 	 */
-	public function get_fields() : array {
+	public function get_fields(): array {
+		$timezone_value =
+			empty( get_post_meta( get_the_ID(), 'event_timezone', true ) )
+				? wp_timezone_string()
+				: get_post_meta( get_the_ID(), 'event_timezone', true );
 		$fields = array(
 			Node_Factory::make(
 				Input_Checkbox::class,
@@ -118,6 +165,15 @@ class Event_Metabox extends Metabox {
 					'options' => array(
 						1 => 'El evento dura todo el día (o no tiene horario de término)',
 					),
+				)
+			),
+			Node_Factory::make(
+				Select::class,
+				array(
+					'name' => 'timezone',
+					'label' => 'Zona horaria',
+					'options' => $this->get_timezones_options(),
+					'value' => $timezone_value,
 				)
 			),
 			Node_Factory::make(
@@ -210,7 +266,7 @@ class Event_Metabox extends Metabox {
 	 * @param string $input Fecha en formato Y-m-d.
 	 * @return string Fecha sanitizada o string vacío
 	 */
-	public function sanitize_date( string $input ) : string {
+	public function sanitize_date( string $input ): string {
 		$date = DateTime::createFromFormat( 'Y-m-d', $input );
 		if ( $date instanceof DateTime ) {
 			return $date->format( 'Y-m-d' );
@@ -224,7 +280,7 @@ class Event_Metabox extends Metabox {
 	 * @param string $input Tiempo en formato "hora:minutos".
 	 * @return string Tiempo sanitizado o string vacío
 	 */
-	public function sanitize_time( string $input ) : string {
+	public function sanitize_time( string $input ): string {
 		$time = DateTime::createFromFormat( 'H:i', $input );
 		if ( $time instanceof DateTime ) {
 			return $time->format( 'H:i' );
@@ -239,7 +295,7 @@ class Event_Metabox extends Metabox {
 	 * @return string Status sanitizado
 	 * @see Event_Post_Object::get_stati()
 	 */
-	public function validate_event_status( string $input ) : string {
+	public function validate_event_status( string $input ): string {
 		return array_key_exists( $input, Event_Post_Object::get_stati() ) ? $input : Event_Post_Object::DEFAULT_STATUS;
 	}
 
@@ -250,7 +306,7 @@ class Event_Metabox extends Metabox {
 	 * @return string Tipo de evento sanitizado
 	 * @see Event_Post_Object::get_attendance_modes()
 	 */
-	public function validate_event_type( string $input ) : string {
+	public function validate_event_type( string $input ): string {
 		return array_key_exists( $input, Event_Post_Object::get_attendance_modes() ) ? $input : Event_Post_Object::DEFAULT_ATTENDANCE;
 	}
 
@@ -260,13 +316,14 @@ class Event_Metabox extends Metabox {
 	 * @param array $data Datos del metabox sin sanitizar.
 	 * @return array Datos sanitizados
 	 */
-	public function sanitize_data( array $data ) : array {
+	public function sanitize_data( array $data ): array {
 		$sanitized = queulat_sanitizer(
 			$data,
 			array(
 				'featured'              => array( 'boolval' ),
 				'dtstart_date'          => array( array( $this, 'sanitize_date' ) ),
 				'dtstart_time'          => array( array( $this, 'sanitize_time' ) ),
+				'timezone'              => array( 'sanitize_text_field' ),
 				'full_day'              => array( 'boolval' ),
 				'dtend_time'            => array( array( $this, 'sanitize_time' ) ),
 				'dtend_date'            => array( array( $this, 'sanitize_date' ) ),
