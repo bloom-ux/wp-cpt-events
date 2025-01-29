@@ -105,8 +105,8 @@ class Event_Metabox extends Metabox {
 		usort(
 			$timezone_identifiers,
 			function ( $a, $b ) use ( $timezone_counts ) {
-				$a_count = (int) $timezone_counts[ $a ] ?? 0;
-				$b_count = (int) $timezone_counts[ $b ] ?? 0;
+				$a_count = isset( $timezone_counts[ $a ] ) ? (int) $timezone_counts[ $a ] : 0;
+				$b_count = isset( $timezone_counts[ $b ] ) ? (int) $timezone_counts[ $b ] : 0;
 				return $a_count === $b_count ? strcasecmp( $a, $b ) : $b_count - $a_count;
 			}
 		);
