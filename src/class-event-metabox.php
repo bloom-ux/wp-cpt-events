@@ -83,7 +83,8 @@ class Event_Metabox extends Metabox {
 		global $wpdb;
 		$timezones_counts = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT COUNT(meta_id) as q, meta_value as timezone_string FROM {$wpdb->postmeta} WHERE meta_key = 'event_timezone' GROUP BY meta_value ORDER BY q desc",
+				"SELECT COUNT(meta_id) as q, meta_value as timezone_string FROM {$wpdb->postmeta} WHERE meta_key = %s GROUP BY meta_value ORDER BY q desc",
+				'event_timezone'
 			)
 		);
 		$counts = wp_list_pluck( $timezones_counts, 'q', 'timezone_string' );
