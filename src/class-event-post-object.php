@@ -164,11 +164,7 @@ class Event_Post_Object extends Post_Object {
 	 * @return DateTimeZone Zona horaria del evento
 	 */
 	public function get_timezone(): DateTimeZone {
-		static $tz;
-		if ( ! $tz ) {
-			$tz = new DateTimeZone( $this->get_timezone_string() );
-		}
-		return $tz;
+		return new DateTimeZone( $this->get_timezone_string() );
 	}
 
 	/**
@@ -179,7 +175,7 @@ class Event_Post_Object extends Post_Object {
 	public function get_time_range(): string {
 		if ( (bool) $this->post->event_full_day ) {
 			/* translators: %s hora de inicio */
-			return sprintf( __( 'Desde las %1$shrs. (%2$s)', 'cpt_event' ), $this->get_formatted_date( 'H:i' ), $this->get_formatted_date( 'e' ) );
+			return sprintf( __( 'Desde las %1$shrs. (%2$s)', 'cpt_event' ), $this->get_formatted_date( 'H:i' ), $this->get_start_datetime()->format( 'e' ) );
 		}
 		$dt_start = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtstart, $this->get_timezone() );
 		$dt_end   = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $this->post->dtend, $this->get_timezone() );
